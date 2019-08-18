@@ -1,0 +1,46 @@
+{
+    "devices": {
+        "netconf:127.0.0.1:11002": {
+            "basic": {
+                "name": "cassini2",
+                "driver": "cassini-openconfig"
+            },
+            "netconf": {
+                "ip": "127.0.0.1",
+                "port": "11002",
+                "username": "root",
+                "password": "root",
+                "idle-timeout": "0",
+                "connect-timeout": "30"
+            }
+        },
+        "rest:127.0.0.1:11000": {
+            "rest": {
+                "ip": "127.0.0.1",
+                "port": 11000,
+                "protocol": "http",
+                "testUrl": "/restconf/data/tapi-common:context",
+                "manufacturer": "tapi-swagger",
+                "hwVersion": "0",
+                "swVersion": "2.1"
+            },
+            "basic": {
+                "driver": "ols"
+            }
+        },
+        "netconf:127.0.0.1:11003": {
+            "basic": {
+                "name": "cassini1",
+                "driver": "cassini-openconfig"
+            },
+            "netconf": {
+                "ip": "127.0.0.1",
+                "port": "11003",
+                "username": "root",
+                "password": "root",
+                "idle-timeout": "0",
+                "connect-timeout": "30"
+            }
+        }
+    }
+}

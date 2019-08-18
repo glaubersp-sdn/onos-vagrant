@@ -1,0 +1,17 @@
+version: "3"
+services:
+  openconfig_oc_1:
+    container_name: oc_1
+    image: glaubersp/emulator-oc:latest
+    ports:
+      - "11002:830"
+  openconfig_oc_2:
+    container_name: oc_2
+    image: glaubersp/emulator-oc:latest
+    ports:
+      - "11003:830"
+  tapi_ols:
+    container_name: tapi_ols
+    image: glaubersp/emulator-tapi-2.1:latest
+    ports:
+      - "11000:1234"

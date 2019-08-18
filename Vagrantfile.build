@@ -12,13 +12,14 @@ Vagrant.configure("2") do |config|
 
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://vagrantcloud.com/search.
-  config.vm.box = "bento/ubuntu-18.04"
+  # config.vm.box = "bento/ubuntu-18.04"
   # config.vm.box = "generic/ubuntu1804"
   # config.vm.box = "ubuntu/bionic64"
-  # config.vm.box = "peru/ubuntu-18.04-desktop-amd64"
+  config.vm.box = "peru/ubuntu-18.04-desktop-amd64"
+  # config.vm.box_version = "20190801.01"
 
   config.vm.hostname = "onos"
-
+  
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
   # `vagrant box outdated`. This is not recommended.
@@ -86,7 +87,12 @@ Vagrant.configure("2") do |config|
   config.vm.provision "shell", inline: <<-SHELL
     export DEBIAN_FRONTEND=noninteractive
     apt-get update
-    apt-get install -y git openjdk-11-jdk mininet bridge-utils curl vim python-pip
+    apt-get install -y git openjdk-11-jdk mininet bridge-utils curl vim
+
+    # Install Bazel
+    curl -fsSL https://bazel.build/bazel-release.pub.gpg | apt-key add -
+    add-apt-repository "deb [arch=amd64] https://storage.googleapis.com/bazel-apt stable jdk1.8"
+    apt-get install -y bazel
 
     # Install Docker
     apt-get install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common
@@ -95,52 +101,57 @@ Vagrant.configure("2") do |config|
     apt-get install -y docker-ce docker-ce-cli containerd.io
     usermod -aG docker vagrant
 
-    systemctl enable docker
-    systemctl start docker
-
     curl -L https://github.com/docker/compose/releases/download/1.18.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
     chmod +x /usr/local/bin/docker-compose
 
     # Remove apt packages
-    apt-get dist-upgrade -y
+    apt-get upgrade -y
     apt-get autoremove --purge -y
     apt-get clean
 
-    # Install ONOS
-    sudo adduser onos --system --group
+    snap install intellij-idea-ultimate --classic
 
-    rm -fr /opt/onos
-    tar xvzf /home/vagrant/src/onos.tar.gz -C /opt/
-    cd /opt
-    ln -s onos-2.2.0-SNAPSHOT onos
-
-    cat <<-'EOF' > /opt/onos/options
-ONOS_USER=onos
-ONOS_APPS=odtn-service,roadm,gui2,optical-rest
-EOF
-    cp /opt/onos/init/onos.initd /etc/init.d/onos
-    cp /opt/onos/init/onos.service /etc/systemd/system/
-
-    sudo chown -R onos:onos /opt/onos*
-
-    systemctl daemon-reload
-    systemctl enable onos
-    systemctl restart onos
-
-    pip install requests
-
-  SHELL
+    SHELL
 
   config.vm.provision "shell", privileged: false, inline: <<-SHELL
-    cat <<-'EOF' > ~/.bash_profile
-PATH=$PATH:/opt/onos/bin:/home/vagrant/src/scenarios-bin
-EOF
-
-    source ~/.bash_profile
-
-    # Run docker images
+    # Download ONOS
     cd ~/src
-    docker-compose up -d
+    if [[ ! -d "onos" ]]; then
+      git clone https://github.com/opennetworkinglab/onos
+      chown -R vagrant:vagrant onos
+      cat <<-'EOF' > /home/vagrant/.bash_profile
+export ONOS_ROOT="~/src/onos"
+source $ONOS_ROOT/tools/dev/bash_profile
+EOF
+    else
+      cd onos
+      git pull
+    fi
+    source /home/vagrant/.bash_profile
+
+    # Download ODTN
+    cd ~/src
+    if [[ ! -d "ODTN-emulator" ]]; then
+      git clone https://github.com/opennetworkinglab/ODTN-emulator
+      chown -R vagrant:vagrant ODTN-emulator
+    else
+      cd ODTN-emulator
+      git pull
+    fi
+
+    # Compile ONOS
+    cd $ONOS_ROOT
+    # bazel build onos &> onos_build.log
+    # export ONOS_APPS=odtn-service,roadm,gui2,optical-rest
+    # nohup bazel run onos-local -- clean debug &> onos_execution.log &
+
+    # Compile ODTN
+    # cd ~/ODTN-emulator
+    # docker-compose build
+    # docker-compose up -d &> odtc_build.log &
+
+    # cd ~/src
+    # docker-compose up -d
 
   SHELL
 end
